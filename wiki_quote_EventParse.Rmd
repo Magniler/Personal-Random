@@ -1,0 +1,41 @@
+---
+title: "Wikiquote  eventparsing"
+author: "Max Odsbjerg Pedersen"
+date: "12/2/2020"
+output: html_document
+---
+
+```{r}
+library(XML)
+```
+
+
+# Event driven parsing - Wikiquote
+Følgende er baseret på Wiki_Quote_Test_Scrabing_v01(NOTWORKING).R. Ændringen der ser ud til at have gjort forskellen er, at jeg har skiftet "feed" ud med "doc" - altså starter vi et niveau lavere end dit udgangspunkt. Helt afgørende er også den sidste linje: `wiki_quot <- h1$getStore()` - hvor man piller resultatet ud h1, hvor det lader til at `xmlEventParse` smider sit noget tvivlsomme output. Kort sagt - jeg ved ikke helt, hvad der foregår bag linjerne, men det virker. Jeg tror dog, at de har ret i deres afsluttende iagttagelse: 
+>As we have seen, the event-driving parsing works and returns the correct information,
+Nonetheless, we do not recommend users to resort to this style of parsing as their prefered means to obtain XML documents. Although event-style parsing exceeds the DOM-style parsing approach with respect to speed and may, in case or really large XML-files, be the only practical method, it necessitates a lot of code overhead as well as background knowledge on R functions and environments 
+
+Men vel netop også derfor du synes det er sjovt. 
+
+```{r}
+start_time <- Sys.time()
+branchWiki <- function(){
+  title_container <- c()
+  abstract_container <- c()
+  'doc' = function(node,...){
+    title <- xmlValue(xmlChildren(node)[[c('title')]])
+    title_container <<- c(title_container, title)
+    abstract <- xmlValue(xmlChildren(node)[[c('abstract')]])
+    abstract_container <<- c(abstract_container, abstract)
+    }
+  getContainer <- function() data.frame(title = title_container, abstract = abstract_container)
+  list(doc = doc, getStore = getContainer)
+}
+(h1 <- branchWiki())
+file <- "data/enwikiquote-20201101-abstract.xml"
+xmlEventParse(file, branches = h1, handlers = list())
+wiki_quot <- h1$getStore()
+end_time <- Sys.time()
+print(end_time - start_time)
+```
+Now, having exstracted a certain part of the data, we can utilize several methods of 
